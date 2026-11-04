@@ -1,0 +1,6 @@
+{
+  "global": {
+    "cmd-shift-f": "mod.open:redline",
+    "ctrl-shift-f": "mod.open:redline"
+  }
+}
