@@ -7,6 +7,8 @@
   GitLab merge requests and GitHub pull requests, reviewed in a git worktree, next to the AI agent you already use.
 </p>
 
+<p align="center"><img src="preview.png" alt="A Redline review tab: terminal on the left, the diff with council findings on the right" width="900"></p>
+
 ---
 
 ## A review, start to finish
