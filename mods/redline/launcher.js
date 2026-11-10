@@ -563,11 +563,15 @@ export class Launcher {
     const t = theme(), rows = this.rows(), r = this.repo;
     if (this.at >= rows.length) this.at = Math.max(0, rows.length - 1);
     const nReq = rows.filter((x) => x.kind === "request").length;
+    const gitlabLoginError = r?.provider === "gitlab" && this.requestError?.includes("invalid_grant");
 
     const left = v_flex().w(380).h_full().flex_none().min_h(0).border_r(1).border_color(t.border)
       .child(div().p(10).flex_none().child(h_flex().h(34).px(10).items_center().rounded(8).border_1().border_color(t.accent).bg(t.background)
         .child(Input.new(this.input).flex_1().h_full().text_size(12.5).text_color(t.foreground))))
-      .when(Boolean(this.requestError), (e) => e.child(div().px(14).pb(6).text_size(11).text_color(t.blocked).child(this.requestError)))
+      .when(Boolean(this.requestError), (e) => e.child(div().px(14).pb(6).text_size(11).text_color(t.blocked)
+        .child(gitlabLoginError
+          ? "GitLab CLI login needs renewal (invalid_grant). Run glab auth login --web in this repo's terminal, then click Recheck login."
+          : this.requestError)))
       .child(v_flex().id("rv-list").flex_1().min_h(0).overflow_y_scrollbar().px(6).pb(8).gap(1)
         .child(h_flex().px(8).py(4).items_center()
           .child(div().flex_1().text_size(10.5).text_color(t.dim).child(`OPEN ${r?.provider === "github" ? "PULL" : "MERGE"} REQUESTS · ${nReq}`))
@@ -598,7 +602,7 @@ export class Launcher {
         .child(div().text_size(14).font_semibold().child("Redline"))
         .child(div().flex_1().truncate().text_size(12).text_color(t.muted).child(r ? `${r.repo ?? r.name}${r.on ? ` · ${r.on}` : ""}` : ""))
         .when(Boolean(this.status), (e) => e.child(div().text_size(11.5).text_color(t.dim).child(this.status)))
-        .child(this.button(t, "rv-refresh", "Refresh", (cx) => { this.details.clear(); this.load(cx); }))
+        .child(this.button(t, "rv-refresh", gitlabLoginError ? "Recheck login" : "Refresh", (cx) => { this.details.clear(); this.load(cx); }))
         .child(div().text_size(11).text_color(t.dim).child("Esc")))
       .child(h_flex().flex_1().min_h(0).items_start().child(left).child(this.detail(t)));
   }
