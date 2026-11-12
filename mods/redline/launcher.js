@@ -209,7 +209,7 @@ export class Launcher {
     this.busyAct = label; this.error = null; cx.notify();
     cx.spawn(async (cx) => {
       try {
-        await fn(); after(); this.select(cx, true, row);
+        await fn(); after(); this.select(cx, true, row); this.loadListStatus(cx);
         if (this.pendingTask) { const task = this.pendingTask; this.pendingTask = null; this.busyAct = null; this.start(row, cx, task); }
       }
       catch (e) { this.error = `${label} failed: ${msg(e)}`; }
@@ -243,6 +243,23 @@ export class Launcher {
       try { this.mrStatus.set(row.number, await host.status(this.repo, row.number)); }
       catch (e) { this.mrStatus.set(row.number, { error: msg(e) }); }
       cx.notify();
+      // GitLab works out mergeability in the background (after a push, or a merge into the
+      // target): look again every few seconds, for up to a minute, until it has.
+      try {
+        for (let i = 0; i < 20 && this.mrStatus.get(row.number)?.checking; i++) {
+          await cx.sleep(3000);
+          this.mrStatus.set(row.number, await host.status(this.repo, row.number));
+          cx.notify();
+        }
+      } catch { /* the panel closed, or offline: Refresh still works */ }
+    });
+  }
+
+  // The list's extras (pipeline dot, threads, "you"), after a write that may have changed them.
+  loadListStatus(cx) {
+    if (!this.repo?.provider) return;
+    cx.spawn(async (cx) => {
+      try { this.status2 = await host.listStatus(this.repo); cx.notify(); } catch { /* shown as they were */ }
     });
   }
 
@@ -602,7 +619,10 @@ export class Launcher {
         .child(div().text_size(14).font_semibold().child("Redline"))
         .child(div().flex_1().truncate().text_size(12).text_color(t.muted).child(r ? `${r.repo ?? r.name}${r.on ? ` · ${r.on}` : ""}` : ""))
         .when(Boolean(this.status), (e) => e.child(div().text_size(11.5).text_color(t.dim).child(this.status)))
-        .child(this.button(t, "rv-refresh", gitlabLoginError ? "Recheck login" : "Refresh", (cx) => { this.details.clear(); this.load(cx); }))
+        .child(this.button(t, "rv-refresh", gitlabLoginError ? "Recheck login" : "Refresh", (cx) => {
+          // Everything cached per request: details, Overview status and the pipeline.
+          this.details.clear(); this.mrStatus.clear(); this.pipes.clear(); this.load(cx);
+        }))
         .child(div().text_size(11).text_color(t.dim).child("Esc")))
       .child(h_flex().flex_1().min_h(0).items_start().child(left).child(this.detail(t)));
   }
