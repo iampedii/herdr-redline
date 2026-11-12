@@ -127,7 +127,7 @@ export async function branchCommits(git, target, branch) {
 // Sends a JSON body through the CLI on stdin (works on another machine too: no temp file).
 async function send(repo, method, path, payload) {
   const tool = repo.provider === "github" ? "gh" : "glab";
-  const script = 'export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"; printf "%s" "$1" | "$0" api --hostname "$2" -X "$3" --input - "$4"';
+  const script = 'export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"; printf "%s" "$1" | "$0" api --hostname "$2" -X "$3" -H "Content-Type: application/json" --input - "$4"';
   return cli("sh", ["-c", script, tool, JSON.stringify(payload), repo.host, method, path], { on: repo.on });
 }
 
