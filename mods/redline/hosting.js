@@ -127,7 +127,7 @@ export async function branchCommits(git, target, branch) {
 // Sends a JSON body through the CLI on stdin (works on another machine too: no temp file).
 async function send(repo, method, path, payload) {
   const tool = repo.provider === "github" ? "gh" : "glab";
-  const script = 'export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"; printf "%s" "$1" | "$0" api --hostname "$2" -X "$3" --input - "$4"';
+  const script = 'export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"; printf "%s" "$1" | "$0" api --hostname "$2" -X "$3" -H "Content-Type: application/json" --input - "$4"';
   return cli("sh", ["-c", script, tool, JSON.stringify(payload), repo.host, method, path], { on: repo.on });
 }
 
@@ -289,15 +289,17 @@ async function gitlabJobs(repo, project, pid) {
   const groups = [];
   const stageOf = (name) => { let g = groups.find((x) => x.name === name); if (!g) groups.push(g = { name, jobs: [] }); return g; };
   for (const j of [...jobs].reverse()) stageOf(j.stage).jobs.push(job(j));
+  const children = [];
   for (const b of bridges) {
     stageOf(b.stage).jobs.push({ ...job(b), bridge: true });
     const down = b.downstream_pipeline;
     if (down?.id) {
       const child = await gitlabJobs(repo, down.project_id ?? project, down.id);
-      for (const g of child) groups.push({ name: `${b.name} › ${g.name}`, jobs: g.jobs });
+      for (const g of child) children.push({ after: b.stage, name: `${b.name} › ${g.name}`, jobs: g.jobs });
     }
   }
-  return groups;
+  // A child pipeline's stages go right after the stage of the bridge that started it.
+  return groups.flatMap((g) => [g, ...children.filter((c) => c.after === g.name).map(({ name, jobs }) => ({ name, jobs }))]);
 }
 
 export async function pipeline(repo, n) {
@@ -400,6 +402,7 @@ export async function status(repo, n) {
       labels: p.labels.map((l) => l.name), assignees: p.assignees.map((a) => a.login),
       reviewers: p.reviewRequests.map((r) => r.login ?? r.name).filter(Boolean),
       mergeable: ["CLEAN", "UNSTABLE", "HAS_HOOKS"].includes(p.mergeStateStatus),
+      checking: p.mergeStateStatus === "UNKNOWN",
     };
   }
   const m = JSON.parse(await gl(repo, `${glp(repo, n)}?include_diverged_commits_count=true`));
@@ -410,6 +413,7 @@ export async function status(repo, n) {
     autoMerge: Boolean(m.merge_when_pipeline_succeeds), squash: Boolean(m.squash), removeBranch: Boolean(m.force_remove_source_branch),
     labels: m.labels ?? [], assignees: (m.assignees ?? []).map((a) => a.username), reviewers: (m.reviewers ?? []).map((a) => a.username),
     mergeable: m.detailed_merge_status === "mergeable",
+    checking: ["checking", "unchecked", "preparing"].includes(m.detailed_merge_status),
   };
 }
 
