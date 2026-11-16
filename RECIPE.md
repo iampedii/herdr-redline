@@ -145,7 +145,10 @@ Code review inside Herdr. `cmd-shift-f` opens a panel of the repo's open GitLab 
 - **When splitting a pane in a space you just opened, always pass `pane`.** Focus may still be elsewhere.
 - **GitLab range comments need `line_range` with `line_code`s.** Redline posts on the range's last line and says so. GitHub gets `start_line`.
 - **Comments only land** on lines GitLab or GitHub show: 3 lines of context around a change. GitHub rejects lines further out. The full-file view dims those lines and blocks commenting on them.
-- **Write paths aren't proven yet.** Merge, draft, labels/assignees/reviewers, retry/cancel, submit and close follow the documented APIs but haven't all been run against a real request.
+- **`glab api --input -` sends no Content-Type before glab 1.123.0** (1.123.0 defaults to `application/json`), and GitLab answers HTTP 415 to every JSON write. Older glab versions are still common, for example from distribution packages. Pass `-H "Content-Type: application/json"`. glab prints the API's error body on stdout and only "HTTP 415" on stderr: report both.
+- **GitLab works out mergeability in the background.** After a push, or a merge into the target, every open request reads `checking` or `unchecked` for a few seconds. Poll again instead of showing it as a blocker until Refresh.
+- **Write paths are proven on GitLab only.** On GitHub, merge, draft, labels/assignees/reviewers, retry/cancel, submit and close follow the documented APIs but haven't all been run against a real pull request.
+- **Menlo is macOS only.** Draw the block logo in JetBrains Mono, which Herdr ships everywhere.
 - **The request list shows 50.** The list query fetches the first 50.
 
 ## Done when

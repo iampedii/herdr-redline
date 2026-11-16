@@ -158,7 +158,7 @@ Pending GitLab comments are real draft notes on the server, so they also show as
 
 Redline is young. Things to know:
 
-- **Test writes on a request that doesn't matter first.** The read paths are tested against GitLab and GitHub. Merge, the draft toggle, label, assignee and reviewer edits, and job retry/cancel are built on the documented APIs but haven't been run against a real request yet.
+- **On GitHub, test writes on a request that doesn't matter first.** The read paths are tested against GitLab and GitHub. On GitLab the write paths are tested too: merge (squash, delete branch, when the pipeline succeeds, cancel auto-merge), the draft toggle, label, assignee and reviewer edits, job retry/cancel/run, comments and the review pane. On GitHub they're built on the documented APIs but haven't been run against a real pull request yet.
 - On GitLab, a comment on a **range** of lines is posted on its last line. GitHub keeps the range.
 - **Notifications** (review requested, pipeline failed, replies) are written but switched off. They need a home in the Herdr window that can't block clicks.
 - The requests list shows up to 50 open requests.

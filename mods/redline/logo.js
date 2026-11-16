@@ -19,10 +19,10 @@ export function logo(t, { size = 9, tagline = true } = {}) {
   const row = (i) => h_flex().h(size * 1.15).items_center()
     .child(div().text_color(BRAND_RED).child(RED[i]))
     .child(div().text_color(t.foreground).child(LINE[i]));
-  return v_flex().flex_none().items_start().font_family("Menlo").text_size(size).whitespace_nowrap()
+  return v_flex().flex_none().items_start().font_family("JetBrains Mono").text_size(size).whitespace_nowrap()
     .children(RED.map((_, i) => row(i)))
     .child(div().mt(size * 0.3).h(Math.max(2, size * 0.35)).w(size * 0.6 * 53).bg(BRAND_RED))
-    .when(tagline, (e) => e.child(h_flex().mt(size * 0.9).gap(size * 1.6).text_size(size * 1.2).font_family("Menlo")
+    .when(tagline, (e) => e.child(h_flex().mt(size * 0.9).gap(size * 1.6).text_size(size * 1.2).font_family("JetBrains Mono")
       .child(h_flex().gap(6).child(div().text_color(BRAND_RED).child("-")).child(div().text_color(t.dim).child("read the diff")))
       .child(h_flex().gap(6).child(div().text_color(t.ansi2).child("+")).child(div().text_color(t.dim).child("mark it up")))
       .child(h_flex().gap(6).child(div().text_color(t.ansi2).child("✓")).child(div().text_color(t.dim).child("ship it")))));

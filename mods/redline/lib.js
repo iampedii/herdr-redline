@@ -57,7 +57,11 @@ export async function cli(name, args, opts = {}) {
     let r;
     try { r = await exec(bin, args, opts); } catch (e) { last = e; continue; }
     if (r.code === 127) { last = new Error(`${name} not found`); continue; }
-    if (r.code !== 0) throw new Error((r.stderr || r.stdout).trim() || `${name} exited ${r.code}`);
+    // Both streams: glab prints the API's error body on stdout and only "HTTP 415" on stderr.
+    if (r.code !== 0) {
+      const text = [...new Set([r.stdout, r.stderr].map((s) => (s ?? "").trim()).filter(Boolean))].join(" ").slice(0, 500);
+      throw new Error(text || `${name} exited ${r.code}`);
+    }
     return r.stdout;
   }
   throw new Error(`${name} isn't installed or can't start: ${msg(last)}`);
