@@ -19,11 +19,21 @@ export async function gitOrThrow(cwd, args, on = null) {
   return r.out;
 }
 
-// git@host:owner/repo.git and https://host/owner/repo(.git) -> { host, repo }.
+// git@host:owner/repo.git and https://host/owner/repo(.git) -> { host, repo, ssh }.
 export function parseRemote(url) {
-  const m = /^[\w.-]+@([^:/]+):(.+?)(?:\.git)?\/?$/.exec(url ?? "")
-    ?? /^\w+:\/\/(?:[^@/]+@)?([^/:]+)(?::\d+)?\/(.+?)(?:\.git)?\/?$/.exec(url ?? "");
-  return m ? { host: m[1], repo: m[2] } : null;
+  const scp = /^[\w.-]+@([^:/]+):(.+?)(?:\.git)?\/?$/.exec(url ?? "");
+  if (scp) return { host: scp[1], repo: scp[2], ssh: true };
+  const m = /^([\w+]+):\/\/(?:[^@/]+@)?([^/:]+)(?::\d+)?\/(.+?)(?:\.git)?\/?$/.exec(url ?? "");
+  return m ? { host: m[2], repo: m[3], ssh: /ssh/.test(m[1]) } : null;
+}
+
+// An SSH remote can name a ~/.ssh/config alias (git@gh-work:owner/repo), which gh and glab
+// don't know: they need the HostName it stands for.
+export async function sshHostName(alias, on) {
+  try {
+    const r = await exec("ssh", ["-G", alias], { on });
+    return (r.code === 0 && /^hostname (\S+)$/m.exec(r.stdout)?.[1]) || alias;
+  } catch { return alias; }
 }
 
 export const providerOf = (host) => (/(^|\.)github\.com$/.test(host) || /github/i.test(host) ? "github" : "gitlab");
@@ -35,6 +45,7 @@ export async function repoAt(folder, on) {
   const main = common.endsWith("/.git") ? common.slice(0, -5) : top;
   const url = (await git(top, ["remote", "get-url", "origin"], on)).out;
   const remote = parseRemote(url);
+  if (remote?.ssh) remote.host = await sshHostName(remote.host, on);
   let head = (await git(top, ["symbolic-ref", "--short", "refs/remotes/origin/HEAD"], on)).out;
   for (const name of ["main", "master", "develop", "trunk"]) {
     if (head) break;

@@ -118,7 +118,7 @@ Code review inside Herdr. `cmd-shift-f` opens a panel of the repo's open GitLab 
   - `logo.js`: the block logo. `logo.ans` is the same logo for a terminal (`cat` it).
 - **Pane props:** `{ provider, host, repo, on, folder, branch, target, number, title, url, tab, upstream: { fetch, ref }, findings }`.
 - **`herdr` functions:**
-  - `exec` (git, glab, gh, sh, open, sleep), `hc(["send", …])`;
+  - `exec` (git, glab, gh, ssh, sh, open, sleep), `hc(["send", …])`;
   - `focused`, `spaces`, `panes`, `agents`, `knownAgents`;
   - `readTextFile`, `shared` / `setShared`, `notify`;
   - `run`, `props`, `closeOverlay`, `openOverlay`, `home`, `nextCommand`.
@@ -138,6 +138,8 @@ Code review inside Herdr. `cmd-shift-f` opens a panel of the repo's open GitLab 
 - **A `cx` kept across an `await` is stale.** Callbacks that run after a network write must take the spawned task's `cx`. Otherwise a successful write reports "failed", and people retry and duplicate.
 - **`h_flex` centres children vertically.** A column inside it needs `h_full()` or it collapses.
 - **Diff parsing:** file headers (`---`, `+++`, `index`) only appear before a file's first `@@`. Inside a hunk, a removed line `-- comment` reads as `--- comment`. Skipping it shifts every following line number.
+- **SSH remotes can use `~/.ssh/config` aliases** (`git@gh-work:owner/repo`).
+  `gh` and `glab` don't know the alias, so Redline reads its real host from `ssh -G <alias>`.
 - **`glab api --paginate` (1.127) prints one JSON array per page**, back to back, despite its help text. Use `--output ndjson`. `gh` needs `--slurp`, then flatten.
 - **`git fetch` into a branch a worktree has checked out is refused.** Fetch forks into `refs/review/…`.
 - **GitLab job traces** start each line with a timestamp and a stream marker glued to the text: `…Z 00O+text`. Section markers end with `[collapsed=true]`.
